@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工場 Wi-Fi ネットワーク設計ツール</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <span class="header-icon">&#128225;</span>
+      <div>
+        <h1>工場 Wi-Fi ネットワーク設計ツール</h1>
+        <p>工場の条件を入力すると、機器配置・設計書を自動生成します</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ===== INPUT PANEL ===== -->
+  <section class="card" id="input-section">
+    <h2 class="card-title">&#9881; 設計条件の入力</h2>
+
+    <form id="design-form">
+      <div class="form-grid">
+
+        <fieldset class="fieldset">
+          <legend>工場サイズ</legend>
+          <div class="field-row">
+            <label for="width">長辺（m）</label>
+            <input type="number" id="width" name="width" value="360" min="10" max="2000" step="1" required>
+          </div>
+          <div class="field-row">
+            <label for="height">短辺（m）</label>
+            <input type="number" id="height" name="height" value="152" min="10" max="2000" step="1" required>
+          </div>
+          <div class="field-row area-display">
+            <label>面積</label>
+            <span id="area-display">54,720 m²</span>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend>ネットワーク設定</legend>
+          <div class="field-row">
+            <label for="ssid">SSID</label>
+            <input type="text" id="ssid" name="ssid" value="FACTORY-WIFI" maxlength="32">
+          </div>
+          <div class="field-row">
+            <label for="ap_spacing">APグリッド間隔（m）</label>
+            <input type="number" id="ap_spacing" name="ap_spacing" value="50" min="20" max="100" step="5">
+          </div>
+          <div class="field-row">
+            <label for="coverage_radius">AP カバー半径（m）</label>
+            <input type="number" id="coverage_radius" name="coverage_radius" value="30" min="10" max="80" step="5">
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset constraint-box">
+          <legend>設計制約（固定）</legend>
+          <ul class="constraint-list">
+            <li><span class="badge badge-blue">WAN</span> LTEルーター経由でインターネット接続</li>
+            <li><span class="badge badge-green">配線</span> LANケーブル最大 5m（スイッチ〜AP間）</li>
+            <li><span class="badge badge-purple">幹線</span> スイッチ間は光ファイバーで接続</li>
+            <li><span class="badge badge-orange">設置</span> スイッチ・ルーターは壁際設置</li>
+            <li><span class="badge badge-orange">内部</span> 内部カバーはメッシュAPで補完</li>
+          </ul>
+        </fieldset>
+
+      </div><!-- /form-grid -->
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span class="btn-icon">&#9654;</span> 設計を実行
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===== LOADING ===== -->
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+    <p>ネットワーク設計を計算中…</p>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div id="results" class="hidden">
+
+    <!-- Summary bar -->
+    <section class="summary-bar" id="summary-bar"></section>
+
+    <!-- Floor plan -->
+    <section class="card">
+      <div class="card-header-row">
+        <h2 class="card-title">&#128506; フロアマップ</h2>
+        <div class="legend">
+          <span class="legend-item"><span class="dot dot-blue"></span>有線AP（壁面）</span>
+          <span class="legend-item"><span class="dot dot-orange"></span>メッシュAP（内部）</span>
+          <span class="legend-item"><span class="dot dot-green"></span>PoEスイッチ</span>
+          <span class="legend-item"><span class="dot dot-purple"></span>LTEルーター</span>
+          <span class="legend-item"><span class="line-dashed"></span>光ファイバー幹線</span>
+        </div>
+      </div>
+      <div id="floor-plan" class="floor-plan-wrap"></div>
+    </section>
+
+    <!-- Tabs: BOM / IP / Config / Document -->
+    <section class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="bom">&#128230; 機器一覧・BOM</button>
+        <button class="tab-btn" data-tab="ip">&#127760; IPアドレス計画</button>
+        <button class="tab-btn" data-tab="config">&#128272; ネットワーク設定</button>
+        <button class="tab-btn" data-tab="doc">&#128196; 設計書（印刷用）</button>
+      </div>
+
+      <!-- BOM tab -->
+      <div id="tab-bom" class="tab-content active">
+        <div class="table-wrap">
+          <table id="bom-table">
+            <thead>
+              <tr>
+                <th>カテゴリ</th>
+                <th>型番・モデル</th>
+                <th>仕様</th>
+                <th class="num">数量</th>
+                <th class="num">単価（円）</th>
+                <th class="num">小計（円）</th>
+                <th>備考</th>
+              </tr>
+            </thead>
+            <tbody id="bom-tbody"></tbody>
+            <tfoot id="bom-tfoot"></tfoot>
+          </table>
+        </div>
+        <p class="table-note">※ 価格は目安です。工事費・保守費は含みません。</p>
+      </div>
+
+      <!-- IP plan tab -->
+      <div id="tab-ip" class="tab-content hidden">
+        <div class="ip-grid" id="ip-grid"></div>
+      </div>
+
+      <!-- Network config tab -->
+      <div id="tab-config" class="tab-content hidden">
+        <div id="config-content"></div>
+      </div>
+
+      <!-- Document tab -->
+      <div id="tab-doc" class="tab-content hidden">
+        <div class="doc-actions">
+          <button class="btn btn-secondary" onclick="window.print()">&#128438; 印刷 / PDF保存</button>
+        </div>
+        <div id="doc-content" class="design-doc"></div>
+      </div>
+
+    </section>
+  </div><!-- /results -->
+
+</main>
+
+<footer>
+  <p>工場 Wi-Fi ネットワーク設計ツール &mdash; 設計値はあくまで目安です。現地調査・電波測定による確認を推奨します。</p>
+</footer>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

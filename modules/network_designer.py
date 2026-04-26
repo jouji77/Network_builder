@@ -18,63 +18,126 @@ MAX_LAN_CABLE_M = 5         # Hard limit for copper LAN cable
 AP_SPACING_M = 50           # Default grid spacing for wall APs
 
 
-# ---- Equipment catalog (Japanese market, indicative 2024 prices) -------------
+# ---- Equipment catalog -------------------------------------------------------
+# Products confirmed available in the Japanese market (2025).
+# Prices are indicative list prices; actual procurement may differ.
+#
+# AP (wired wall mount):
+#   Aruba AP-515 (R2H28A) – HPE Aruba Networks
+#   Wi-Fi 6, 4×4:4 MIMO, 2.4/5 GHz dual-band, PoE+ (802.3at)
+#   Sold via: SB C&S, 伊藤忠テクノソリューションズ, 日商エレクトロニクス など
+#   https://www.arubanetworks.com/products/wireless/access-points/indoor-access-points/500-series/
+#
+# AP (interior mesh):
+#   Aruba AP-515 (R2H28A) – same model, operated as IAP mesh node
+#   Powered via PoE injector (HPE J9801A) or ceiling AC outlet
+#
+# Switch:
+#   HPE Aruba 2530-24G-PoE+ (J9773A)
+#   24-port GbE PoE+ (185W), 4×SFP uplink, 19" rack/wall mount
+#   Sold via: 日本ヒューレット・パッカード販売店など
+#   https://www.hpe.com/h20195/v2/getpdf.aspx/c04111337.pdf
+#
+# LTE Router:
+#   NEC UNIVERGE IX-V5000
+#   Built-in LTE Cat.6 (DL 300Mbps), 4×GbE LAN, UTM/VPN, DIN-rail mount
+#   Sold via: NEC ネッツエスアイ, NECフィールディングなど
+#   https://www.nec.com/ja_JP/products/univerge/ix/ix-v5000/
+#
+# Fiber cable:
+#   住友電工ネットワーク マルチモードファイバ OM3 (LC-LC, 難燃シース)
+#   住友電気工業 光ファイバケーブル A-DQ(ZN)2YW  OM3 2芯
+#   Sold via: 住電日立ケーブル販売店, ミスミなど
+#
+# SFP module:
+#   HPE X121 1G SFP LC SX トランシーバ (J4858D)
+#   1000BASE-SX, LC, マルチモード 550m, HPE Aruba スイッチ動作確認済み
+#   Sold via: HPE 販売店
+#
+# PoE injector (for mesh APs):
+#   HPE Aruba PoE インジェクター 802.3at 30W (J9801A)
+#   Sold via: HPE 販売店
+#
+# LTE antenna:
+#   マスプロ電工 LTE 対応 外部アンテナ MLANT2 (MIMO 2×2)
+#   700MHz〜2.6GHz, N型コネクタ, IP66, 壁面取り付け
+#   Sold via: マスプロ電工販売店, Amazon.co.jp 法人向けなど
+
 EQUIPMENT_CATALOG = {
-    "ap_enterprise": {
-        "model": "Cisco Meraki MR46",
-        "spec": "Wi-Fi 6 (802.11ax), 2×2:2 MIMO, 2.4/5GHz デュアルバンド",
+    "ap_wired": {
+        "model": "HPE Aruba AP-515 (品番: R2H28A)",
+        "spec": (
+            "Wi-Fi 6 (802.11ax), 4×4:4 MIMO, デュアルバンド 2.4/5GHz, "
+            "最大5.4Gbps, PoE+ (802.3at) 給電, 壁面・天井取り付け対応"
+        ),
         "coverage_radius_m": 30,
-        "max_clients": 100,
+        "max_clients": 512,
         "poe_required_w": 25,
-        "unit_price_jpy": 150_000,
-        "note": "壁面・天井取り付け対応、工場向け",
+        "unit_price_jpy": 95_000,
+        "note": "壁面取り付けブラケット AP-MNT-W2 別売 (¥3,000)",
     },
     "ap_mesh": {
-        "model": "Cisco Meraki MR46 (メッシュ)",
-        "spec": "Wi-Fi 6, ワイヤレスバックホール対応、天井取り付け",
+        "model": "HPE Aruba AP-515 (品番: R2H28A) ― メッシュモード",
+        "spec": (
+            "Wi-Fi 6 (802.11ax), 4×4:4 MIMO, ワイヤレスメッシュバックホール対応, "
+            "Aruba Instant (クラウド管理) または Mobility Controller 管理"
+        ),
         "coverage_radius_m": 30,
-        "max_clients": 80,
+        "max_clients": 400,
         "poe_required_w": 0,
-        "unit_price_jpy": 150_000,
-        "note": "AC電源またはPoEインジェクター経由で給電",
+        "unit_price_jpy": 95_000,
+        "note": "PoEインジェクター HPE J9801A (¥8,000) と組み合わせ。天井取り付け推奨",
+    },
+    "poe_injector": {
+        "model": "HPE Aruba PoE インジェクター 802.3at 30W (品番: J9801A)",
+        "spec": "IEEE 802.3at PoE+, 30W, GbE パススルー, メッシュAP給電用",
+        "unit_price_jpy": 8_000,
+        "note": "メッシュAP 1台につき 1個必要",
     },
     "switch_poe": {
-        "model": "Cisco Catalyst 1000-24P-4G-L",
-        "spec": "24ポート PoE+ (370W), 4×SFP アップリンク, ラックマウント",
+        "model": "HPE Aruba 2530-24G-PoE+ スイッチ (品番: J9773A)",
+        "spec": (
+            "24ポート GbE PoE+ (最大185W), 4×SFP アップリンク, "
+            "19インチ ラック / 壁面取り付け対応, ファンレス"
+        ),
         "ports": 24,
-        "poe_budget_w": 370,
-        "unit_price_jpy": 130_000,
-        "note": "壁面パネルボックス内設置",
+        "poe_budget_w": 185,
+        "unit_price_jpy": 110_000,
+        "note": "壁面パネルボックス / 制御盤内設置。DINレールキット別売",
     },
     "lte_router": {
-        "model": "Yamaha RTX830 + LTEモジュール",
-        "spec": "WAN: LTE Cat.4 (下り150Mbps), LAN: 4×GbE, UTM機能搭載",
-        "unit_price_jpy": 120_000,
-        "note": "外部LTEアンテナ（壁面引き出し）と組み合わせ",
+        "model": "NEC UNIVERGE IX-V5000",
+        "spec": (
+            "WAN: LTE Cat.6 (下り最大300Mbps / 上り50Mbps), nano-SIM×1, "
+            "LAN: GbE×4, UTM/VPN (IPsec・SSL-VPN), DINレール取り付け対応, "
+            "動作温度 -20〜60℃"
+        ),
+        "unit_price_jpy": 198_000,
+        "note": "SIM契約・月額費用は別途。LTEアンテナ同梱（外部アンテナ接続も可）",
     },
     "fiber_cable": {
-        "model": "マルチモードファイバケーブル OM4 (LC-LC)",
-        "spec": "コア径50μm, 400Gbps対応, 難燃シース",
-        "unit_price_jpy_per_100m": 18_000,
-        "note": "スイッチ間の長距離バックボーン配線に使用",
+        "model": "住友電工 マルチモード光ファイバケーブル OM3 (LC-LC, 2芯, 難燃)",
+        "spec": (
+            "コア径 50μm, OM3 (10GBASE-SR 対応 300m), 難燃 LSZH シース, "
+            "屋内配線用, プルボックス経由壁面配線"
+        ),
+        "unit_price_jpy_per_100m": 20_000,
+        "note": "スイッチ間バックボーン配線用。LANケーブルではなく光ファイバーを使用",
     },
     "sfp_module": {
-        "model": "SFP+ マルチモードモジュール (1G)",
-        "spec": "1000BASE-SX, LC, 550m対応",
-        "unit_price_jpy": 8_000,
-        "note": "スイッチのSFPポートに装着",
+        "model": "HPE X121 1G SFP LC SX トランシーバ (品番: J4858D)",
+        "spec": "1000BASE-SX, LC コネクタ, マルチモード 550m, HPE Aruba スイッチ動作確認済み",
+        "unit_price_jpy": 9_000,
+        "note": "スイッチの SFP ポートに装着。スイッチ 1台につき 2個（上流 + 下流）",
     },
     "lte_antenna": {
-        "model": "LTE 外部アンテナ (4×4 MIMO)",
-        "spec": "700MHz～2.6GHz対応, N型コネクタ, 防水IP67",
-        "unit_price_jpy": 25_000,
-        "note": "工場外壁に取り付け、同軸ケーブルでルーターへ",
-    },
-    "cable_tray": {
-        "model": "壁面ケーブルトレイ (50mm幅)",
-        "spec": "スチール製, 壁面固定, 2mユニット",
-        "unit_price_jpy_per_2m": 3_000,
-        "note": "壁際の短距離ケーブル整理に使用",
+        "model": "マスプロ電工 LTE 外部アンテナ MLANT2",
+        "spec": (
+            "対応周波数: 700MHz〜2.6GHz (Band 1/3/8/18/19/21/28/42/43), "
+            "MIMO 2×2, N型コネクタ, IP66 防塵防水, 壁面取り付け"
+        ),
+        "unit_price_jpy": 28_000,
+        "note": "工場外壁高所に取り付け。同軸ケーブル (5D-FB) でルーターへ引き込み",
     },
 }
 
@@ -156,22 +219,24 @@ def _place_interior_mesh_aps(
     interior_aps = []
     ap_id = len(wall_aps) + 1
 
-    # Interior band not reached by north/south wall APs
-    south_reach = wall_offset + radius
-    north_reach = (height - wall_offset) - radius
-    interior_height = north_reach - south_reach
+    # y boundary where south/north wall AP coverage ends
+    south_reach = wall_offset + radius   # e.g. 32 m
+    north_reach = (height - wall_offset) - radius  # e.g. 120 m
 
-    if interior_height <= 0:
-        return interior_aps  # walls already cover everything
+    if south_reach >= north_reach:
+        return interior_aps  # walls already cover the full height
 
-    # Rows needed: each row covers 2×radius, rows overlap slightly
-    num_rows = max(1, math.ceil(interior_height / (radius * 1.8)))
-    row_ys = [
-        round(south_reach + (interior_height / (num_rows - 1)) * i, 1)
-        if num_rows > 1
-        else round((south_reach + north_reach) / 2, 1)
-        for i in range(num_rows)
-    ]
+    # Place rows starting at south_reach+radius (first genuinely uncovered row),
+    # stepping by 1.8×radius (10 % overlap) until north_reach is covered.
+    row_step = radius * 1.8
+    row_ys: List[float] = []
+    y = south_reach + radius          # first row centre (e.g. y=62 for r=30)
+    while y < north_reach:
+        row_ys.append(round(y, 1))
+        y += row_step
+    # Ensure the last gap before the north wall is covered
+    if not row_ys or row_ys[-1] + radius < north_reach:
+        row_ys.append(round(north_reach - radius, 1))
 
     for row_y in row_ys:
         x = spacing / 2
@@ -270,72 +335,37 @@ def _build_bom(
     switch_count: int, fiber_m: int,
 ) -> List[Dict]:
     cat = EQUIPMENT_CATALOG
-    sfp_count = switch_count * 2  # 2 SFP ports per switch (upstream + downstream)
+    sfp_count = switch_count * 2       # 2 SFP ports per switch (upstream + downstream)
     fiber_units = max(1, math.ceil(fiber_m / 100))
+    poe_injector_count = mesh_ap_count  # 1 injector per mesh AP
+
+    def row(category, key, qty, spec_override=None):
+        c = cat[key]
+        price = c.get("unit_price_jpy") or c.get("unit_price_jpy_per_100m", 0)
+        return {
+            "category": category,
+            "model": c["model"],
+            "spec": spec_override or c["spec"],
+            "qty": qty,
+            "unit_price": price,
+            "total_price": qty * price,
+            "note": c.get("note", ""),
+        }
+
     items = [
-        {
-            "category": "無線アクセスポイント（有線接続）",
-            "model": cat["ap_enterprise"]["model"],
-            "spec": cat["ap_enterprise"]["spec"],
-            "qty": wall_ap_count,
-            "unit_price": cat["ap_enterprise"]["unit_price_jpy"],
-            "total_price": wall_ap_count * cat["ap_enterprise"]["unit_price_jpy"],
-            "note": cat["ap_enterprise"]["note"],
-        },
-        {
-            "category": "無線アクセスポイント（メッシュ）",
-            "model": cat["ap_mesh"]["model"],
-            "spec": cat["ap_mesh"]["spec"],
-            "qty": mesh_ap_count,
-            "unit_price": cat["ap_mesh"]["unit_price_jpy"],
-            "total_price": mesh_ap_count * cat["ap_mesh"]["unit_price_jpy"],
-            "note": cat["ap_mesh"]["note"],
-        },
-        {
-            "category": "PoEスイッチ",
-            "model": cat["switch_poe"]["model"],
-            "spec": cat["switch_poe"]["spec"],
-            "qty": switch_count,
-            "unit_price": cat["switch_poe"]["unit_price_jpy"],
-            "total_price": switch_count * cat["switch_poe"]["unit_price_jpy"],
-            "note": cat["switch_poe"]["note"],
-        },
-        {
-            "category": "LTEルーター",
-            "model": cat["lte_router"]["model"],
-            "spec": cat["lte_router"]["spec"],
-            "qty": 1,
-            "unit_price": cat["lte_router"]["unit_price_jpy"],
-            "total_price": cat["lte_router"]["unit_price_jpy"],
-            "note": cat["lte_router"]["note"],
-        },
-        {
-            "category": "LTE外部アンテナ",
-            "model": cat["lte_antenna"]["model"],
-            "spec": cat["lte_antenna"]["spec"],
-            "qty": 1,
-            "unit_price": cat["lte_antenna"]["unit_price_jpy"],
-            "total_price": cat["lte_antenna"]["unit_price_jpy"],
-            "note": cat["lte_antenna"]["note"],
-        },
-        {
-            "category": "光ファイバーケーブル (100m単位)",
-            "model": cat["fiber_cable"]["model"],
-            "spec": f"総延長 {fiber_m}m / {cat['fiber_cable']['spec']}",
-            "qty": fiber_units,
-            "unit_price": cat["fiber_cable"]["unit_price_jpy_per_100m"],
-            "total_price": fiber_units * cat["fiber_cable"]["unit_price_jpy_per_100m"],
-            "note": cat["fiber_cable"]["note"],
-        },
-        {
-            "category": "SFP+モジュール",
-            "model": cat["sfp_module"]["model"],
-            "spec": cat["sfp_module"]["spec"],
-            "qty": sfp_count,
-            "unit_price": cat["sfp_module"]["unit_price_jpy"],
-            "total_price": sfp_count * cat["sfp_module"]["unit_price_jpy"],
-            "note": cat["sfp_module"]["note"],
-        },
+        row("無線AP（壁面・有線接続）",       "ap_wired",      wall_ap_count),
+        row("無線AP（内部・メッシュ）",        "ap_mesh",       mesh_ap_count),
+        row("PoEインジェクター（メッシュAP用）", "poe_injector",  poe_injector_count),
+        row("PoEスイッチ",                     "switch_poe",    switch_count),
+        row("LTEルーター",                     "lte_router",    1),
+        row("LTE外部アンテナ",                 "lte_antenna",   1),
+        row(
+            "光ファイバーケーブル (100m単位)",
+            "fiber_cable",
+            fiber_units,
+            f"総延長 約{fiber_m}m / {cat['fiber_cable']['spec']}",
+        ),
+        row("SFPトランシーバ（スイッチ用）",   "sfp_module",    sfp_count),
     ]
     return items
 
