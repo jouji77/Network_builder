@@ -13,30 +13,64 @@ function updateArea() {
 $("width").addEventListener("input", updateArea);
 $("height").addEventListener("input", updateArea);
 
-// ===== Form submit =====
-$("design-form").addEventListener("submit", async e => {
-  e.preventDefault();
-  const payload = {
+// ===== Current form payload (shared between submit and download) =====
+function getPayload() {
+  return {
     width:           parseFloat($("width").value),
     height:          parseFloat($("height").value),
     ssid:            $("ssid").value.trim() || "FACTORY-WIFI",
     ap_spacing:      parseFloat($("ap_spacing").value),
     coverage_radius: parseFloat($("coverage_radius").value),
   };
+}
 
+// ===== Excel download =====
+$("excel-btn").addEventListener("click", async () => {
+  const btn = $("excel-btn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-icon">⏳</span> 生成中…';
+  try {
+    const res = await fetch("/api/export/excel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(getPayload()),
+    });
+    if (!res.ok) throw new Error("サーバーエラー");
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    a.href     = url;
+    a.download = `network_design_${today}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("ダウンロードエラー: " + err.message);
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled  = false;
+  }
+});
+
+// ===== Form submit =====
+$("design-form").addEventListener("submit", async e => {
+  e.preventDefault();
   $("loading").classList.remove("hidden");
   $("results").classList.add("hidden");
+  $("excel-btn").disabled = true;
   $("submit-btn").disabled = true;
 
   try {
     const res = await fetch("/api/design", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(getPayload()),
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || "設計計算に失敗しました");
     renderResults(json.design);
+    $("excel-btn").disabled = false;  // enable download after successful design
   } catch (err) {
     alert("エラー: " + err.message);
   } finally {
