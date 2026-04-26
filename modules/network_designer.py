@@ -434,6 +434,19 @@ def calculate_network_design(width: float, height: float, requirements: dict = N
         "ip_plan": ip_plan,
         "equipment_bom": bom,
         "total_cost_jpy": total_cost,
+        # AP radio model used by the client-side heatmap renderer
+        "ap_model": {
+            "model_name": "HPE Aruba AP-515 (5GHz帯)",
+            "tx_power_dbm": 20,        # effective Tx power (dBm)
+            "freq_ghz": 5.5,           # centre frequency for FSPL reference
+            "fspl_1m_db": 47.3,        # free-space path loss at d=1m, 5.5GHz
+            "path_loss_n": 3.0,        # log-distance exponent (factory: metal/machinery)
+            "antenna_gain_dbi": 5,     # internal omni antenna
+            "note": (
+                "ログ距離伝搬モデル: RSSI(d)=Pt - FSPL(1m) - 10·n·log10(d)  "
+                "[Pt=20dBm, n=3.0, 基準距離 d0=1m]"
+            ),
+        },
     }
 
 

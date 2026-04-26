@@ -115,7 +115,111 @@ function renderSummary(d) {
 // ===== Floor Plan =====
 function renderFloorPlan(d) {
   $("floor-plan").innerHTML = d.floor_plan_svg;
+  // Defer heatmap until SVG is laid out
+  requestAnimationFrame(() => drawHeatmap(d));
+  // Show AP model info in toolbar
+  const m = d.ap_model;
+  $("heatmap-model-info").textContent =
+    `モデル: ${m.model_name}  |  Pt=${m.tx_power_dbm}dBm  n=${m.path_loss_n}  FSPL(1m)=${m.fspl_1m_db}dB`;
 }
+
+// ===== Heatmap (Canvas) =====
+// Log-distance path loss model:  RSSI(d) = Pt - FSPL(1m) - 10·n·log10(d)
+
+const RSSI_LEVELS = [
+  { min: -60, r: 0,   g: 180, b: 60,  a: 0.68, label: "≥−60 dBm 優良" },
+  { min: -67, r: 100, g: 210, b: 0,   a: 0.63, label: "≥−67 dBm 良好" },
+  { min: -73, r: 240, g: 210, b: 0,   a: 0.63, label: "≥−73 dBm 可" },
+  { min: -80, r: 255, g: 110, b: 0,   a: 0.68, label: "≥−80 dBm 弱い" },
+  { min: -85, r: 220, g: 30,  b: 30,  a: 0.68, label: "≥−85 dBm 非常に弱い" },
+  { min: -Infinity, r: 100, g: 0, b: 140, a: 0.60, label: "<−85 dBm 圏外" },
+];
+
+function rssiToRgba(rssi) {
+  for (const lvl of RSSI_LEVELS) {
+    if (rssi >= lvl.min) return [lvl.r, lvl.g, lvl.b, lvl.a];
+  }
+  return [100, 0, 140, 0.60];
+}
+
+// SVG layout constants – must match generate_floor_plan_svg() in network_designer.py
+const SVG_PAD_LEFT  = 50;
+const SVG_PAD_TOP   = 30;
+const SVG_SCALE     = 1.6;   // px per meter in the SVG viewBox
+
+let _lastDesign = null;
+
+function drawHeatmap(d) {
+  _lastDesign = d;
+  const canvas  = $("heatmap-canvas");
+  const svgEl   = document.querySelector("#floor-plan svg");
+  if (!svgEl) return;
+
+  const svgVB       = svgEl.viewBox.baseVal;        // viewBox dimensions
+  const svgRect     = svgEl.getBoundingClientRect();
+  const containerRect = $("floor-plan-container").getBoundingClientRect();
+
+  // Scale from SVG viewBox coordinates to actual rendered pixels
+  const kx = svgRect.width  / svgVB.width;
+  const ky = svgRect.height / svgVB.height;
+
+  // Size and position canvas exactly over the rendered SVG element
+  canvas.width  = svgRect.width;
+  canvas.height = svgRect.height;
+  canvas.style.width  = svgRect.width  + "px";
+  canvas.style.height = svgRect.height + "px";
+  canvas.style.left   = (svgRect.left - containerRect.left) + "px";
+  canvas.style.top    = (svgRect.top  - containerRect.top)  + "px";
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!$("heatmap-toggle").checked) return;
+
+  const { width: FW, height: FH } = d.factory;
+  const { tx_power_dbm: Pt, fspl_1m_db: PL0, path_loss_n: n } = d.ap_model;
+  const aps = d.access_points;
+
+  const STEP = 4; // meters per grid cell (trade-off: resolution vs speed)
+
+  for (let my = 0; my < FH; my += STEP) {
+    for (let mx = 0; mx < FW; mx += STEP) {
+      // Centre of this grid cell
+      const cx = mx + STEP / 2;
+      const cy = my + STEP / 2;
+
+      // Best RSSI from any AP at this cell centre
+      let bestRSSI = -200;
+      for (const ap of aps) {
+        const d_m = Math.max(Math.hypot(cx - ap.x, cy - ap.y), 0.5);
+        const rssi = Pt - PL0 - 10 * n * Math.log10(d_m);
+        if (rssi > bestRSSI) bestRSSI = rssi;
+      }
+
+      const [r, g, b, a] = rssiToRgba(bestRSSI);
+      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+
+      // Convert factory metres → SVG viewBox px → canvas px
+      // SVG: x grows right, y grows down with ty(y)=PAD_TOP+(FH-y)*SCALE
+      const px = (SVG_PAD_LEFT + mx * SVG_SCALE) * kx;
+      const py = (SVG_PAD_TOP  + (FH - my - STEP) * SVG_SCALE) * ky;
+      const pw = STEP * SVG_SCALE * kx;
+      const ph = STEP * SVG_SCALE * ky;
+
+      ctx.fillRect(px, py, Math.ceil(pw) + 1, Math.ceil(ph) + 1);
+    }
+  }
+}
+
+// Toggle heatmap visibility
+$("heatmap-toggle").addEventListener("change", () => {
+  if (_lastDesign) drawHeatmap(_lastDesign);
+});
+
+// Redraw on window resize so canvas stays aligned
+window.addEventListener("resize", () => {
+  if (_lastDesign) requestAnimationFrame(() => drawHeatmap(_lastDesign));
+});
 
 // ===== BOM Table =====
 function renderBOM(d) {

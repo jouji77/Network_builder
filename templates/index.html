@@ -108,7 +108,32 @@
           <span class="legend-item"><span class="line-dashed"></span>光ファイバー幹線</span>
         </div>
       </div>
-      <div id="floor-plan" class="floor-plan-wrap"></div>
+
+      <!-- Heatmap controls -->
+      <div class="heatmap-toolbar" id="heatmap-toolbar">
+        <label class="heatmap-toggle">
+          <input type="checkbox" id="heatmap-toggle" checked>
+          <span>&#128312; 電波強度ヒートマップを表示</span>
+        </label>
+        <span class="heatmap-model-info" id="heatmap-model-info"></span>
+      </div>
+
+      <!-- Floor plan + heatmap canvas overlay -->
+      <div id="floor-plan-container" class="floor-plan-container">
+        <div id="floor-plan" class="floor-plan-wrap"></div>
+        <canvas id="heatmap-canvas" class="heatmap-canvas"></canvas>
+      </div>
+
+      <!-- RSSI legend -->
+      <div class="rssi-legend" id="rssi-legend">
+        <span class="rssi-legend-title">電波強度 (RSSI)</span>
+        <span class="rssi-item rssi-ex">&#9632; &ge;&#8209;60 dBm 優良</span>
+        <span class="rssi-item rssi-vg">&#9632; &ge;&#8209;67 dBm 良好</span>
+        <span class="rssi-item rssi-gd">&#9632; &ge;&#8209;73 dBm 可</span>
+        <span class="rssi-item rssi-fr">&#9632; &ge;&#8209;80 dBm 弱い</span>
+        <span class="rssi-item rssi-pr">&#9632; &ge;&#8209;85 dBm 非常に弱い</span>
+        <span class="rssi-item rssi-no">&#9632; &lt;&#8209;85 dBm 圏外</span>
+      </div>
     </section>
 
     <!-- Tabs: BOM / IP / Config / Document -->
